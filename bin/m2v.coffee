@@ -1,4 +1,5 @@
 _ = require 'underscore'
+fs = require 'fs'
 shortid = require 'shortid'
 frontMatter = require('yaml-front-matter')
 
@@ -66,4 +67,15 @@ markdownToCourseJson = (filePath) ->
   process.stdout.write JSON.stringify(courseJson), null, 2
 
 filePath = process.argv[2]
+
+usage = 'mv2 </path/to/doc.md>'
+
+unless filePath
+  console.info usage
+  process.exit 1
+unless fs.existsSync filePath
+  console.error "Error: '#{filePath}' does not exist"
+  console.info usage
+  process.exit 1
+
 markdownToCourseJson filePath
