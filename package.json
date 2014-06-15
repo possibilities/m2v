@@ -1,7 +1,7 @@
 {
   "name": "m2v",
   "version": "0.0.0",
-  "description": "A CLI that converts a markdown document to VERSAL course JSON",
+  "description": "A CLI that converts a markdown document to Versal course JSON",
   "bin": "bin/m2v.js",
   "dependencies": {
     "coffee-script": "^1.7.1",
