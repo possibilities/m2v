@@ -2,8 +2,6 @@ _ = require 'underscore'
 shortid = require 'shortid'
 frontMatter = require('yaml-front-matter')
 
-{ title, courseMarkdown } = frontMatter.loadFront 'example.md', 'courseMarkdown'
-
 markdownToGadget = (markdown) ->
   type = 'versal/markdown'
   data = markdown.join("\n")
@@ -62,5 +60,10 @@ markdownToCourse = (title, courseMarkdown) ->
   lessons = markdownToLessons courseMarkdown
   return { title, lessons }
 
-courseJson = markdownToCourse title, courseMarkdown
-process.stdout.write JSON.stringify(courseJson), null, 2
+markdownToCourseJson = (filePath) ->
+  { title, courseMarkdown } = frontMatter.loadFront filePath, 'courseMarkdown'
+  courseJson = markdownToCourse title, courseMarkdown
+  process.stdout.write JSON.stringify(courseJson), null, 2
+
+filePath = process.argv[2]
+markdownToCourseJson filePath
