@@ -14,20 +14,19 @@ lessonToGadgets = (_lessonMarkdown) ->
   gadgets = []
   currentGadgetMarkdown = []
   markdownLines = _lessonMarkdown.trim().split "\n"
-  for line in markdownLines
-    if line.trim()
-      words = line.split ' '
-      if _.first(words) == '##'
-        unless _.isEmpty currentGadgetMarkdown
-          gadgets.push markdownToGadget currentGadgetMarkdown
-        currentGadgetMarkdown = []
-        type = 'versal/header'
-        content =_.rest(words).join ' '
-        config = { content }
-        id = shortid.generate()
-        gadgets.push { id, type, config }
-      else
-        currentGadgetMarkdown.push line
+  _.each _.compact(markdownLines), (line) ->
+    words = line.split ' '
+    if _.first(words) == '##'
+      unless _.isEmpty currentGadgetMarkdown
+        gadgets.push markdownToGadget currentGadgetMarkdown
+      currentGadgetMarkdown = []
+      type = 'versal/header'
+      content =_.rest(words).join ' '
+      config = { content }
+      id = shortid.generate()
+      gadgets.push { id, type, config }
+    else
+      currentGadgetMarkdown.push line
 
   unless _.isEmpty currentGadgetMarkdown
     gadgets.push markdownToGadget currentGadgetMarkdown
@@ -41,7 +40,7 @@ markdownToLessons = (_courseMarkdown) ->
   lessons = []
   currentLessonMarkdown = []
   markdownLines = _courseMarkdown.trim().split "\n"
-  for line in markdownLines
+  _.each _.compact(markdownLines), (line) ->
     words = line.split ' '
     if _.first(words) == '#'
       unless _.isEmpty currentLessonMarkdown
