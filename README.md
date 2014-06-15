@@ -45,7 +45,7 @@ The second lesson needs some content too
 
 This is what the course generated from `./example.md` looks like
 
-![Screenshot](example.png)
+![Screenshot](screenshot.png)
 
 ## TODO
 
