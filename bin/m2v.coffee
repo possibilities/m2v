@@ -59,11 +59,8 @@ markdownToLessons = (_courseMarkdown) ->
   return lessons
 
 markdownToCourse = (title, courseMarkdown) ->
-  course = { title }
-
-  course.lessons = markdownToLessons courseMarkdown
-  return course
-
+  lessons = markdownToLessons courseMarkdown
+  return { title, lessons }
 
 courseJson = markdownToCourse title, courseMarkdown
 process.stdout.write JSON.stringify(courseJson), null, 2
