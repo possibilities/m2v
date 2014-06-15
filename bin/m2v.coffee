@@ -12,24 +12,27 @@ markdownToGadget = (markdown) ->
 
 lessonToGadgets = (_lessonMarkdown) ->
   gadgets = []
-  currentGadgetMarkdown = []
+  _markdownPeices = []
   markdownLines = _lessonMarkdown.trim().split "\n"
+
   _.each _.compact(markdownLines), (line) ->
     words = line.split ' '
     if _.first(words) == '##'
-      unless _.isEmpty currentGadgetMarkdown
-        gadgets.push markdownToGadget currentGadgetMarkdown
-      currentGadgetMarkdown = []
+      unless _.isEmpty _markdownPeices
+        gadget = markdownToGadget _markdownPeices
+        gadgets.push gadget
+      _markdownPeices = []
+
       type = 'versal/header'
       content =_.rest(words).join ' '
       config = { content }
       id = shortid.generate()
       gadgets.push { id, type, config }
     else
-      currentGadgetMarkdown.push line
+      _markdownPeices.push line
 
-  unless _.isEmpty currentGadgetMarkdown
-    gadgets.push markdownToGadget currentGadgetMarkdown
+  unless _.isEmpty _markdownPeices
+    gadgets.push markdownToGadget _markdownPeices
   return gadgets
 
 markdownToGadgets = (_markdown) ->
@@ -38,22 +41,24 @@ markdownToGadgets = (_markdown) ->
 
 markdownToLessons = (_courseMarkdown) ->
   lessons = []
-  currentLessonMarkdown = []
+  _markdownPeices = []
   markdownLines = _courseMarkdown.trim().split "\n"
+
   _.each _.compact(markdownLines), (line) ->
     words = line.split ' '
     if _.first(words) == '#'
-      unless _.isEmpty currentLessonMarkdown
-        _.last(lessons).gadgets = markdownToGadgets currentLessonMarkdown
-      currentLessonMarkdown = []
+      unless _.isEmpty _markdownPeices
+        _.last(lessons).gadgets = markdownToGadgets _markdownPeices
+      _markdownPeices = []
+
       title = _.rest(words).join ' '
       id = shortid.generate()
       lessons.push { id, title }
     else
-      currentLessonMarkdown.push line
+      _markdownPeices.push line
 
-  unless _.isEmpty currentLessonMarkdown
-    _.last(lessons).gadgets = markdownToGadgets currentLessonMarkdown
+  unless _.isEmpty _markdownPeices
+    _.last(lessons).gadgets = markdownToGadgets _markdownPeices
   return lessons
 
 markdownToCourse = (title, courseMarkdown) ->
