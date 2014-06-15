@@ -3,72 +3,101 @@ fs = require 'fs'
 shortid = require 'shortid'
 frontMatter = require('yaml-front-matter')
 
-markdownToGadget = (markdown) ->
-  type = 'versal/markdown'
-  data = markdown.join("\n")
-  config = { data }
-  id = shortid.generate().replace '_', ''
+buildGadget = (rawGadget) ->
+  type = config = null
+  switch rawGadget.type
+    when 'header'
+      type = 'versal/header'
+      content = rawGadget.content
+      config = { content }
+    when 'markdown'
+      type = 'versal/markdown'
+      data = rawGadget.content
+      config = { data }
+  id = shortid.generate()
   return { id, type, config }
 
-lessonToGadgets = (_lessonMarkdown) ->
+lessonTreeToGadgets = (lessonTree) ->
+  title = lessonTree.header
   gadgets = []
-  _markdownPeices = []
-  markdownLines = _lessonMarkdown.trim().split "\n"
 
-  _.each _.compact(markdownLines), (line) ->
-    words = line.split ' '
-    if _.first(words) == '##'
-      unless _.isEmpty _markdownPeices
-        gadget = markdownToGadget _markdownPeices
-        gadgets.push gadget
-      _markdownPeices = []
+  if _.isArray lessonTree.content
+    _.each lessonTree.content, (section) ->
+      type = 'header'
+      if section.header
+        content = section.header
+        gadgets.push buildGadget { type, content }
 
-      type = 'versal/header'
-      content =_.rest(words).join ' '
-      config = { content }
-      id = shortid.generate()
-      gadgets.push { id, type, config }
-    else
-      _markdownPeices.push line
+      type = 'markdown'
+      if section.content
+        content = section.content
+        gadgets.push buildGadget { type, content }
 
-  unless _.isEmpty _markdownPeices
-    gadgets.push markdownToGadget _markdownPeices
-  return gadgets
+  else if _.isString lessonTree.content
+    type = 'markdown'
+    content = lessonTree.content
+    gadgets.push buildGadget { type, content }
 
-markdownToGadgets = (_markdown) ->
-  markdown = _markdown.join "\n"
-  return lessonToGadgets markdown
+  id = shortid.generate()
+  return { id, title, gadgets }
 
-markdownToLessons = (_courseMarkdown) ->
-  lessons = []
-  _markdownPeices = []
-  markdownLines = _courseMarkdown.trim().split "\n"
-
-  _.each _.compact(markdownLines), (line) ->
-    words = line.split ' '
-    if _.first(words) == '#'
-      unless _.isEmpty _markdownPeices
-        _.last(lessons).gadgets = markdownToGadgets _markdownPeices
-      _markdownPeices = []
-
-      title = _.rest(words).join ' '
-      id = shortid.generate()
-      lessons.push { id, title }
-    else
-      _markdownPeices.push line
-
-  unless _.isEmpty _markdownPeices
-    _.last(lessons).gadgets = markdownToGadgets _markdownPeices
-  return lessons
-
-markdownToCourse = (title, courseMarkdown) ->
-  lessons = markdownToLessons courseMarkdown
+courseTreeToCourseJson = (title, courseTree) ->
+  lessons = _.reduce courseTree, (lessons, _lesson) ->
+    lesson = lessonTreeToGadgets _lesson
+    if lesson.gadgets.length
+      lessons.push lesson
+    return lessons
+  , []
   return { title, lessons }
 
-markdownToCourseJson = (filePath) ->
-  { title, courseMarkdown } = frontMatter.loadFront filePath, 'courseMarkdown'
-  courseJson = markdownToCourse title, courseMarkdown
-  process.stdout.write JSON.stringify(courseJson), null, 2
+isHeader = (line, depth) ->
+  expectedHeader = _.reduce _.range(depth), (str) ->
+    str += '#'
+  , ""
+
+  words = line.split ' '
+  return _.first(words) == expectedHeader
+
+markdownContainsAnyHeaders = (markdown, depth) ->
+  lines = markdown.trim().split '\n'
+  _.any lines, _.partial isHeader, _, depth
+
+splitMarkdownAtHeader = (markdown, depth) ->
+  # if there's no headers return the markdown as-is
+  return markdown unless markdownContainsAnyHeaders markdown, depth
+
+  lines = markdown.trim().split '\n'
+  return _.reduce lines, (sections, line, index) ->
+    section = _.last sections
+    if isHeader line, depth
+      section.header = _.rest(line.split(' ')).join ' '
+    else
+      section.peices.push line
+      nextLine = lines[index + 1]
+      if index >= (lines.length - 1) || nextLine && isHeader nextLine, depth
+        section.content = section.peices.join '\n'
+        delete section.peices
+        sections.push { peices: [] }
+
+    return sections
+  , [{ peices: [] }]
+
+markdownToLessonsTree = (courseMarkdown) ->
+  # TODO should be some nice recursive way to do this
+  lessons = splitMarkdownAtHeader courseMarkdown, 1
+  _.map lessons, (lesson) ->
+    if lesson.content
+      lesson.content = splitMarkdownAtHeader lesson.content, 2
+    lesson
+
+markdownToCourseTree = (title, courseMarkdown) ->
+  lessons = markdownToLessonsTree courseMarkdown
+  return { title, lessons }
+
+markdownToCourseJson = (title, courseMarkdown) ->
+  courseTree = markdownToLessonsTree courseMarkdown
+  courseJson = courseTreeToCourseJson title, courseTree
+  process.stdout.write JSON.stringify(courseJson, null, 2)
 
 filePath = process.argv[2]
 
@@ -82,4 +111,5 @@ unless fs.existsSync filePath
   console.info usage
   process.exit 1
 
-markdownToCourseJson filePath
+{ title, courseMarkdown } = frontMatter.loadFront filePath, 'courseMarkdown'
+markdownToCourseJson title, courseMarkdown
