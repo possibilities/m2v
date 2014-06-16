@@ -18,7 +18,7 @@ Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor 
 
 Intro to tutorial
 
-## "Hello learner"
+## "Hello learner" gadget
 
 In this section we'll get setup and build our first gadget. It will do nothing but greet a learner.
 

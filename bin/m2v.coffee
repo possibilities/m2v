@@ -23,13 +23,13 @@ lessonTreeToGadgets = (lessonTree) ->
 
   if _.isArray lessonTree.content
     _.each lessonTree.content, (section) ->
-      type = 'header'
       if section.header
+        type = 'header'
         content = section.header
         gadgets.push buildGadget { type, content }
 
-      type = 'markdown'
       if section.content
+        type = 'markdown'
         content = section.content
         gadgets.push buildGadget { type, content }
 
