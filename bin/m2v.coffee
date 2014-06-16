@@ -1,7 +1,7 @@
 _ = require 'underscore'
 fs = require 'fs'
 shortid = require 'shortid'
-frontMatter = require('yaml-front-matter')
+frontMatter = require 'yaml-front-matter'
 
 buildGadget = (rawGadget) ->
   type = config = null
@@ -14,8 +14,43 @@ buildGadget = (rawGadget) ->
       type = 'versal/markdown'
       data = rawGadget.content
       config = { data }
+    when 'code'
+      type = 'ryjo/Highlightr'
+      code = rawGadget.content
+      theme = 'tomorrow-night-eighties'
+      config = { code, theme }
   id = shortid.generate()
   return { id, type, config }
+
+buildMarkdownGadget = (content) ->
+  type = 'markdown'
+  buildGadget { type, content }
+
+buildCodeGadget = (content) ->
+  type = 'code'
+  buildGadget { type, content }
+
+buildMarkdownAndCodeGadgets = (content) ->
+  gadgets = []
+  peices = []
+  inCodeBlock = false
+  _.each content.split('\n'), (line) ->
+    if line[0..3] == '```'
+      if inCodeBlock
+        gadgets.push buildCodeGadget peices.join('\n')
+      else
+        gadgets.push buildMarkdownGadget peices.join('\n')
+      inCodeBlock = !inCodeBlock
+      peices = []
+    else
+      peices.push line
+  gadgets.push buildMarkdownGadget peices.join('\n')
+  peices = []
+  return gadgets
+
+buildHeaderGadget = (content) ->
+  type = 'header'
+  buildGadget { type, content }
 
 lessonTreeToGadgets = (lessonTree) ->
   title = lessonTree.header
@@ -24,21 +59,15 @@ lessonTreeToGadgets = (lessonTree) ->
   if _.isArray lessonTree.content
     _.each lessonTree.content, (section) ->
       if section.header
-        type = 'header'
-        content = section.header
-        gadgets.push buildGadget { type, content }
-
+        gadgets.push buildHeaderGadget section.header
       if section.content
-        type = 'markdown'
-        content = section.content
-        gadgets.push buildGadget { type, content }
+        gadgets.push buildMarkdownAndCodeGadgets section.content
 
   else if _.isString lessonTree.content
-    type = 'markdown'
-    content = lessonTree.content
-    gadgets.push buildGadget { type, content }
+    gadgets.push buildMarkdownAndCodeGadgets lessonTree.content
 
   id = shortid.generate()
+  gadgets = _.flatten gadgets
   return { id, title, gadgets }
 
 courseTreeToCourseJson = (title, courseTree) ->
@@ -53,7 +82,7 @@ courseTreeToCourseJson = (title, courseTree) ->
 isHeader = (line, depth) ->
   expectedHeader = _.reduce _.range(depth), (str) ->
     str += '#'
-  , ""
+  , ''
 
   words = line.split ' '
   return _.first(words) == expectedHeader
