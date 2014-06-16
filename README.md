@@ -12,8 +12,6 @@ A CLI that converts a markdown document to Versal course JSON
 
 * Code blocks are rendered as Highlightr gadgets
 
-*Note: only "#" style H1s are currently supported at this time*
-
 ## Example
 
 A simple course in markdown format might look like this
