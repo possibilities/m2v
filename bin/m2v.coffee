@@ -91,7 +91,7 @@ markdownContainsAnyHeaders = (markdown, depth) ->
   lines = markdown.trim().split '\n'
   _.any lines, _.partial isHeader, _, depth
 
-splitMarkdownAtHeader = (markdown, depth) ->
+splitMarkdownAtHeaders = (markdown, depth) ->
   # if there's no headers return the markdown as-is
   return markdown unless markdownContainsAnyHeaders markdown, depth
 
@@ -113,10 +113,10 @@ splitMarkdownAtHeader = (markdown, depth) ->
 
 markdownToLessonsTree = (courseMarkdown) ->
   # TODO should be some nice recursive way to do this
-  lessons = splitMarkdownAtHeader courseMarkdown, 1
+  lessons = splitMarkdownAtHeaders courseMarkdown, 1
   _.map lessons, (lesson) ->
     if lesson.content
-      lesson.content = splitMarkdownAtHeader lesson.content, 2
+      lesson.content = splitMarkdownAtHeaders lesson.content, 2
     lesson
 
 markdownToCourseTree = (title, courseMarkdown) ->
