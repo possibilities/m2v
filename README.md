@@ -12,6 +12,8 @@ A CLI that converts a markdown document to Versal course JSON
 
 * Code blocks are rendered as Highlightr gadgets
 
+* Internal anchor links will be rewritten to point to the appropriate lesson or section [TODO]
+
 ## Example
 
 A simple course in markdown format might look like this
