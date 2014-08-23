@@ -96,7 +96,7 @@ splitMarkdownAtHeaders = (markdown, depth) ->
   return markdown unless markdownContainsAnyHeaders markdown, depth
 
   lines = markdown.trim().split '\n'
-  return _.reduce lines, (sections, line, index) ->
+  documents = _.reduce lines, (sections, line, index) ->
     section = _.last sections
     if isHeader line, depth
       section.header = _.rest(line.split(' ')).join ' '
@@ -111,9 +111,14 @@ splitMarkdownAtHeaders = (markdown, depth) ->
     return sections
   , [{ peices: [] }]
 
+  # TODO maybe there's a smarter way but for now we sometimes
+  # end up with an empty document at the end
+  return _.select documents, (doc) -> _.isUndefined doc.peices
+
 markdownToLessonsTree = (courseMarkdown) ->
   # TODO should be some nice recursive way to do this
   lessons = splitMarkdownAtHeaders courseMarkdown, 1
+
   _.map lessons, (lesson) ->
     if lesson.content
       lesson.content = splitMarkdownAtHeaders lesson.content, 2
