@@ -19,6 +19,14 @@ buildGadget = (rawGadget) ->
       code = rawGadget.content
       theme = 'tomorrow-night-eighties'
       config = { code, theme }
+    when 'image'
+      type = 'versal/image'
+      cleanerUrlInfo = rawGadget.content.replace(/\"/g, '')
+      urlParts = cleanerUrlInfo.split('(')[1][...-1].split(' ')
+      [url, labelParts...] = urlParts
+      asset = imageToAssetId url
+      config = { asset }
+
   id = shortid.generate()
   return { id, type, config }
 
@@ -30,18 +38,27 @@ buildCodeGadget = (content) ->
   type = 'code'
   buildGadget { type, content }
 
+buildImageGadget = (content) ->
+  type = 'image'
+  buildGadget { type, content }
+
 buildMarkdownAndCodeGadgets = (content) ->
   gadgets = []
   peices = []
   inCodeBlock = false
   _.each content.split('\n'), (line) ->
-    if line[0..3] == '```'
+    if line[0...3] == '```'
       if inCodeBlock
         gadgets.push buildCodeGadget peices.join('\n')
       else
         gadgets.push buildMarkdownGadget peices.join('\n')
       inCodeBlock = !inCodeBlock
       peices = []
+    else if line[0...2] == '!['
+      unless _.isEmpty peices
+        gadgets.push buildMarkdownGadget peices.join('\n')
+        peices = []
+      gadgets.push buildImageGadget line
     else
       peices.push line
   gadgets.push buildMarkdownGadget peices.join('\n')
@@ -128,17 +145,11 @@ markdownToCourseTree = (title, courseMarkdown) ->
   lessons = markdownToLessonsTree courseMarkdown
   return { title, lessons }
 
-mapImagesToAssetUrls = (markdown) ->
-  unless fs.existsSync './images.json'
-    return markdown
-  imagesJson = fs.readJsonSync './images.json'
-  _.each imagesJson, (url, image) ->
-    markdown = markdown.replace image, url
-
-  return markdown
+imageToAssetId = (image) ->
+  imageIds = fs.readJsonSync './images.json'
+  return imageIds[image]
 
 markdownToCourseJson = (title, courseMarkdown) ->
-  courseMarkdown = mapImagesToAssetUrls courseMarkdown
   courseTree = markdownToLessonsTree courseMarkdown
   courseJson = courseTreeToCourseJson title, courseTree
   process.stdout.write JSON.stringify(courseJson, null, 2)
