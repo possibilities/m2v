@@ -1,5 +1,5 @@
 _ = require 'underscore'
-fs = require 'fs'
+fs = require 'fs-extra'
 shortid = require 'shortid'
 frontMatter = require 'yaml-front-matter'
 
@@ -128,7 +128,17 @@ markdownToCourseTree = (title, courseMarkdown) ->
   lessons = markdownToLessonsTree courseMarkdown
   return { title, lessons }
 
+mapImagesToAssetUrls = (markdown) ->
+  unless fs.existsSync './images.json'
+    return markdown
+  imagesJson = fs.readJsonSync './images.json'
+  _.each imagesJson, (url, image) ->
+    markdown = markdown.replace image, url
+
+  return markdown
+
 markdownToCourseJson = (title, courseMarkdown) ->
+  courseMarkdown = mapImagesToAssetUrls courseMarkdown
   courseTree = markdownToLessonsTree courseMarkdown
   courseJson = courseTreeToCourseJson title, courseTree
   process.stdout.write JSON.stringify(courseJson, null, 2)
